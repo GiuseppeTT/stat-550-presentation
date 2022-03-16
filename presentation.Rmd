@@ -1,0 +1,450 @@
+---
+title: "Confidence interval interpretation"
+author: "Giuseppe Tinti Tomio"
+output:
+    xaringan::moon_reader:
+        self_contained: yes
+        nature:
+            highlightStyle: github
+            highlightLines: true
+            countIncrementalSlides: false
+---
+
+```{css css setup, echo = FALSE}
+.pull-left-70 {
+    float: left;
+    width: 65%;
+}
+.pull-right-30 {
+    float: right;
+    width: 35%;
+}
+
+.big {
+    font-size: 25px;
+}
+
+.left {
+    float : left;
+}
+
+.center {
+    float: center;
+}
+
+.right {
+    float : right;
+}
+
+.orange {
+    color: #E69F00;
+}
+
+.green {
+    color: #009E73;
+}
+
+.blue {
+    color: #0072B2;
+}
+```
+
+```{r R setup, include = FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE,
+    fig.align = "left",
+    fig.height = 7,
+    fig.width = 10,
+    fig.retina = 5,
+    out.height = "100%"
+)
+
+library(tidyverse)
+library(xkcd)
+
+COLUMN_COUNT <- 4
+ROW_COUNT <- 4
+TOTAL_COUNT <- COLUMN_COUNT * ROW_COUNT
+
+EXPERIMENT_COUNT <- 100
+POPULATION_SIZE <- 20
+TRUE_LOCATION <- 170
+TRUE_SCALE <- 10
+
+SEED <- 42
+
+# RED <- scales::hue_pal()(2)[1]
+# BLUE <- scales::hue_pal()(2)[2]
+ORANGE <- "#E69F00"
+GREEN <- "#009E73"
+BLUE <- "#0072B2"
+BASE_SIZE <- 24
+
+plot_stickmen <- function(
+    column_count,
+    row_count,
+    is_selected = FALSE
+) {
+    data <- generate_stickmen_data(column_count, row_count, is_selected)
+
+    plot <-
+        ggplot() +
+        xkcdman(aes(
+            x = x,
+            y = y,
+            scale = draw_height,
+            ratioxy = xy_ratio,
+            angleofspine = spine_angle,
+            anglelefthumerus = lefth_humerus_angle,
+            anglerighthumerus = right_humerus_angle,
+            angleleftradius = left_radius_angle,
+            anglerightradius = right_radius_angle,
+            angleleftleg = left_leg_angle,
+            anglerightleg = right_leg_angle,
+            angleofneck = neck_angle,
+            color = is_selected
+        ), data) +
+        scale_x_continuous(expand = expansion(add = 0)) +
+        scale_y_continuous(expand = expansion(add = 0)) +
+        scale_color_manual(values = c(`TRUE` = ORANGE, `FALSE` = BLUE), guide = "none") +
+        theme_void()
+
+    return(plot)
+}
+
+generate_stickmen_data <- function(
+    column_count,
+    row_count,
+    is_selected
+) {
+    total_count <- column_count * row_count
+
+    x <- rep(seq(0, column_count - 1), times = row_count)
+    y <- - 4 * rep(seq(0, row_count - 1), each = column_count)
+    draw_height <- 1
+    xy_ratio <- diff(range(x)) / diff(range(y))
+
+    down <- - pi / 2
+    tilt <- pi / 12
+    left_tilted <- down + tilt
+    right_tilted <- down - tilt
+
+    data <- tibble(
+        x = x,
+        y = y,
+        draw_height = draw_height,
+        xy_ratio = xy_ratio,
+        spine_angle = down,
+        lefth_humerus_angle = left_tilted,
+        right_humerus_angle = right_tilted,
+        left_radius_angle = left_tilted,
+        right_radius_angle = right_tilted,
+        left_leg_angle = left_tilted,
+        right_leg_angle = right_tilted,
+        neck_angle = down,
+        is_selected = is_selected
+    )
+
+    return(data)
+}
+
+plot_ci <- function(
+    confidence_level,
+    experiment_count,
+    population_size,
+    true_location,
+    true_scale,
+    seed = NULL
+) {
+    data <-
+        confidence_level %>%
+        generate_ci_data(
+            experiment_count,
+            population_size,
+            true_location,
+            true_scale,
+            seed
+        )
+
+    y_breaks <- seq(true_location - 2 * true_scale, true_location + 2 * true_scale, 10)
+    color_values <- c(`TRUE` = GREEN, `FALSE` = ORANGE)
+
+    plot <-
+        data %>%
+        ggplot(aes(x = index, ymin = lower_ci, ymax = upper_ci, color = is_covering)) +
+        geom_hline(yintercept = true_location, size = 2) +
+        geom_errorbar(size = 2, width = 0) +
+        scale_x_continuous(breaks = NULL, expand = expansion(add = 1)) +
+        scale_y_continuous(breaks = y_breaks, labels = ~ str_glue("{.x}\ncm"), limits = range(y_breaks), expand = expansion(add = 1)) +
+        scale_color_manual(values = color_values, guide = "none") +
+        labs(
+            x = NULL,
+            y = NULL
+        ) +
+        theme_minimal(BASE_SIZE)
+
+    return(plot)
+}
+
+generate_ci_data <- function(
+    confidence_level,
+    experiment_count,
+    population_size,
+    true_location,
+    true_scale,
+    seed = NULL
+) {
+    set.seed(seed)
+
+    data <- tibble(
+        index = seq(experiment_count),
+        sample = replicate(experiment_count, list(rnorm(population_size, true_location, true_scale)))
+    )
+
+    data <-
+        data %>%
+        rowwise() %>%
+        mutate(location = mean(sample), scale = sd(sample)) %>%
+        ungroup()
+
+    quantile <- 1 - (1 - confidence_level) / 2
+
+    data <-
+        data %>%
+        mutate(
+            lower_ci = location - qt(quantile, population_size) * scale / sqrt(population_size),
+            upper_ci = location + qt(quantile, population_size) * scale / sqrt(population_size)
+        ) %>%
+        mutate(is_covering = (lower_ci <= true_location) & (true_location <= upper_ci))
+
+    return(data)
+}
+
+set.seed(SEED)
+```
+
+```{r reference setup, include = FALSE, cache = FALSE}
+library(RefManageR)
+
+bibliography <- ReadBib("./bibliography.bib")
+
+BibOptions(
+    bib.style = "authoryear",
+    max.names = 1,
+    cite.style = "authoryear",
+    style = "markdown",
+    hyperlink = FALSE
+)
+
+Citet(bibliography, "shields2011bias")
+```
+
+```{r processing, include = FALSE}
+```
+
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = FALSE
+)
+```
+]
+
+.pull-right-30.big.center[
+Average height?
+]
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = TRUE
+)
+```
+]
+
+.pull-right-30.big[
+.orange[$$h = 170 \text{ cm}$$]
+]
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = sample(c(rep(TRUE, times = 4), rep(FALSE, times = TOTAL_COUNT - 4)))
+)
+```
+]
+
+.pull-right-30.big[
+$$h = 170 \text{ cm}$$
+
+.orange[$$\widehat{\mu} = 163 \text{ cm}$$]
+]
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = sample(c(rep(TRUE, times = 4), rep(FALSE, times = TOTAL_COUNT - 4)))
+)
+```
+]
+
+.pull-right-30.big[
+$$h = 170 \text{ cm}$$
+
+.orange[$$\widehat{\mu} = 181 \text{ cm}$$]
+]
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = sample(c(rep(TRUE, times = 4), rep(FALSE, times = TOTAL_COUNT - 4)))
+)
+```
+]
+
+.pull-right-30.big[
+$$h = 170 \text{ cm}$$
+
+.orange[$$\widehat{\mu} = 181 \text{ cm}$$]
+
+.orange[$$\widehat{\sigma} = 10 \text{ cm}$$]
+]
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = sample(c(rep(TRUE, times = 4), rep(FALSE, times = TOTAL_COUNT - 4)))
+)
+```
+]
+
+.pull-right-30.big[
+$$h = 170 \text{ cm}$$
+
+.orange[$$\widehat{\mu} = 163 \text{ cm}$$]
+
+.orange[$$\widehat{\sigma} = 12 \text{ cm}$$]
+]
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = sample(c(rep(TRUE, times = 4), rep(FALSE, times = TOTAL_COUNT - 4)))
+)
+```
+]
+
+.pull-right-30.big[
+$$h = 170 \text{ cm}$$
+
+.orange[$$\widehat{\mu} = 163 \text{ cm}$$]
+
+.orange[$$\widehat{\sigma} = 12 \text{ cm}$$]
+
+.orange[$$\text{CI} = [151 \text{ cm}, 176 \text{ cm}]$$]
+
+.orange[$$\text{CI} = [\widehat{\mu} - \widehat{\sigma},\, \widehat{\mu} + \widehat{\sigma}]$$]
+]
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = sample(c(rep(TRUE, times = 4), rep(FALSE, times = TOTAL_COUNT - 4)))
+)
+```
+]
+
+.pull-right-30.big[
+$$h = 170 \text{ cm}$$
+
+.orange[$$\widehat{\mu} = 181 \text{ cm}$$]
+
+.orange[$$\widehat{\sigma} = 10 \text{ cm}$$]
+
+.orange[$$\text{CI} = [171 \text{ cm}, 191 \text{ cm}]$$]
+
+.orange[$$\text{CI} = [\widehat{\mu} - \widehat{\sigma},\, \widehat{\mu} + \widehat{\sigma}]$$]
+]
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = sample(c(rep(TRUE, times = 4), rep(FALSE, times = TOTAL_COUNT - 4)))
+)
+```
+]
+
+.pull-right-30.big[
+$$h = 170 \text{ cm}$$
+
+.orange[$$\widehat{\mu} = 181 \text{ cm}$$]
+
+.orange[$$\widehat{\sigma} = 10 \text{ cm}$$]
+
+.orange[$$\text{CI} = [161 \text{ cm}, 201 \text{ cm}]$$]
+
+.orange[$$\text{CI} = [\widehat{\mu} - 2 \widehat{\sigma},\, \widehat{\mu} + 2 \widehat{\sigma}]$$]
+]
+
+---
+```{r, fig.height = 8, fig.width = 12}
+plot_ci(0.50, EXPERIMENT_COUNT, POPULATION_SIZE, TRUE_LOCATION, TRUE_SCALE, SEED)
+```
+
+.right.green[Confidence level `r scales::percent(0.50)`]
+
+---
+```{r, fig.height = 8, fig.width = 12}
+plot_ci(0.90, EXPERIMENT_COUNT, POPULATION_SIZE, TRUE_LOCATION, TRUE_SCALE, SEED)
+```
+
+.right.green[Confidence level `r scales::percent(0.90)`]
+
+---
+# Example
+
+This:
+- `r Citet(bibliography, "shields2011bias")` report a 95% CI of [174cm, 175cm] for the height of the average Canadian man
+
+Means:
+- The average Canadian men is estimated to be between 174cm and 175cm tall
+- We can be confident of this estimate, because if a lot of scientists replicated the experiment, we would expect 95% of them to be correct
+
+---
+# Reference, code and others
+
+## Reference
+
+```{r references, echo = FALSE, results = "asis"}
+PrintBibliography(bibliography)
+```
+
+## Slide source code
+
+[github.com/GiuseppeTT/TA-presentation-module](https://github.com/GiuseppeTT/TA-presentation-module)
