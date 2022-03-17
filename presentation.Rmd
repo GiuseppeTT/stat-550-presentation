@@ -729,4 +729,4 @@ PrintBibliography(bibliography)
 
 ## Slide source code
 
-[github.com/GiuseppeTT/TA-presentation-module](https://github.com/GiuseppeTT/TA-presentation-module)
+[github.com/GiuseppeTT/stat-550-presentation](https://github.com/GiuseppeTT/stat-550-presentation)
