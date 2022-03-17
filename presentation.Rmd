@@ -1,5 +1,5 @@
 ---
-title: "Confidence interval interpretation"
+title: "Uncertainty"
 author: "Giuseppe Tinti Tomio"
 output:
     xaringan::moon_reader:
@@ -8,46 +8,8 @@ output:
             highlightStyle: github
             highlightLines: true
             countIncrementalSlides: false
+            slideNumberFormat: "%current%"
 ---
-
-```{css css setup, echo = FALSE}
-.pull-left-70 {
-    float: left;
-    width: 65%;
-}
-.pull-right-30 {
-    float: right;
-    width: 35%;
-}
-
-.big {
-    font-size: 25px;
-}
-
-.left {
-    float : left;
-}
-
-.center {
-    float: center;
-}
-
-.right {
-    float : right;
-}
-
-.orange {
-    color: #E69F00;
-}
-
-.green {
-    color: #009E73;
-}
-
-.blue {
-    color: #0072B2;
-}
-```
 
 ```{r R setup, include = FALSE}
 knitr::opts_chunk$set(
@@ -56,7 +18,8 @@ knitr::opts_chunk$set(
     fig.height = 7,
     fig.width = 10,
     fig.retina = 5,
-    out.height = "100%"
+    out.height = "100%",
+    cache = TRUE
 )
 
 library(tidyverse)
@@ -223,6 +186,46 @@ generate_ci_data <- function(
 set.seed(SEED)
 ```
 
+```{css css setup}
+.pull-left-70 {
+    float: left;
+    width: 65%;
+}
+.pull-right-30 {
+    float: right;
+    width: 35%;
+}
+
+.big {
+    font-size: 25px;
+}
+
+.left {
+    float : left;
+}
+
+.center {
+    float: center;
+}
+
+
+.right {
+    float : right;
+}
+
+.orange {
+    color: #E69F00;
+}
+
+.green {
+    color: #009E73;
+}
+
+.blue {
+    color: #0072B2;
+}
+```
+
 ```{r reference setup, include = FALSE, cache = FALSE}
 library(RefManageR)
 
@@ -236,12 +239,25 @@ BibOptions(
     hyperlink = FALSE
 )
 
-Citet(bibliography, "shields2011bias")
+# Citet(bibliography, "shields2011bias")
 ```
 
 ```{r processing, include = FALSE}
 ```
 
+# Uncertainty
+
+- What is it?
+- Why is it important?
+- How can I measure it?
+- How to deal with it?
+
+---
+class: center, middle, inverse
+
+# A quick story
+
+---
 .pull-left-70[
 ```{r, fig.height = 8, fig.width = 6}
 plot_stickmen(
@@ -253,7 +269,101 @@ plot_stickmen(
 ]
 
 .pull-right-30.big.center[
-Average height?
+Height?
+]
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = c(TRUE, rep_len(FALSE, TOTAL_COUNT - 1))
+)
+```
+]
+
+.pull-right-30.big.center[
+.orange[Height = 171]
+]
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = c(rep_len(FALSE, 1), TRUE, rep_len(FALSE, TOTAL_COUNT - 1 - 1))
+)
+```
+]
+
+.pull-right-30.big.center[
+.orange[Height = 189]
+]
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = c(rep_len(FALSE, 2), TRUE, rep_len(FALSE, TOTAL_COUNT - 2 - 1))
+)
+```
+]
+
+.pull-right-30.big.center[
+.orange[Height = 153]
+]
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = FALSE
+)
+```
+]
+
+.pull-right-30.big.center[
+]
+
+---
+# What is it?
+
+- **Certainty** is how confident you are about some guess
+- **Uncertainty** is the opposite of certainty
+
+---
+# Why is it important?
+
+> Statistic does not tell us wheter we are right. It tells us the chance of being wrong.
+>
+> `r Citet(bibliography, "krzywinski2013importance")`
+
+
+--
+- Understand uncertainty is to understand how much you know about the unkown
+- Make honest guesses
+
+--
+- Job security for statistician
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = FALSE
+)
+```
+]
+
+.pull-right-30.big.center[
 ]
 
 ---
@@ -267,8 +377,98 @@ plot_stickmen(
 ```
 ]
 
-.pull-right-30.big[
-.orange[$$h = 170 \text{ cm}$$]
+.pull-right-30.big.center.middle[
+<br>
+<br>
+<br>
+```{r, fig.height = 8, fig.width = 6}
+histogram_data <- tibble(
+    height = rnorm(1000, TRUE_LOCATION, TRUE_SCALE)
+)
+
+histogram_data %>%
+    ggplot(aes(x = height)) +
+    geom_histogram(bins = 50, fill = ORANGE) +
+    theme_void()
+```
+]
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = TRUE
+)
+```
+]
+
+.pull-right-30.big.center[
+.orange[Bottom 1% = 140]
+
+.orange[Top 1% = 200]
+]
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = TRUE
+)
+```
+]
+
+.pull-right-30.big.center[
+.orange[Mean = 170]
+
+.orange[SD = 10]
+
+<br>
+
+.orange[$$\mu = \frac{\sum\limits_i x_i}{N}$$]
+
+.orange[$$\sigma = \sqrt{\frac{\sum\limits_i (x_i - \mu)^2}{N}}$$]
+]
+
+---
+# How to measure it?
+
+- Standard deviation
+
+$$\sigma = \sqrt{\frac{\sum\limits_i (x_i - \mu)^2}{N}}$$
+
+--
+- Median absolute deviation
+
+$$\text{MAD} = \text{median}(|x_i - \text{median}(x)|)$$
+
+--
+- Other approaches like entropy
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = TRUE
+)
+```
+]
+
+.pull-right-30.big.center[
+.orange[Mean = 177]
+
+.orange[SD = 10]
+
+<br>
+
+.orange[$$\mu = \frac{\sum\limits_i x_i}{N}$$]
+
+.orange[$$\sigma = \sqrt{\frac{\sum\limits_i (x_i - \mu)^2}{N}}$$]
 ]
 
 ---
@@ -282,10 +482,22 @@ plot_stickmen(
 ```
 ]
 
-.pull-right-30.big[
-$$h = 170 \text{ cm}$$
+.pull-right-30.big.center[
+Pop Mean = 170
 
-.orange[$$\widehat{\mu} = 163 \text{ cm}$$]
+Pop SD = 10
+
+<br>
+
+.orange[Sample mean = 169]
+
+.orange[Sample SD = 10]
+
+<br>
+
+.orange[$$\hat{\mu} = \frac{\sum\limits_i x_i}{n}$$]
+
+.orange[$$\hat{\sigma} = \sqrt{\frac{\sum\limits_i (x_i - \hat{\mu})^2}{n - 1}}$$]
 ]
 
 ---
@@ -299,10 +511,100 @@ plot_stickmen(
 ```
 ]
 
-.pull-right-30.big[
-$$h = 170 \text{ cm}$$
+.pull-right-30.big.center[
+Pop Mean = 170
 
-.orange[$$\widehat{\mu} = 181 \text{ cm}$$]
+Pop SD = 10
+
+<br>
+
+.orange[Sample mean = 163]
+
+.orange[Sample SD = 12]
+
+<br>
+
+.orange[$$\hat{\mu} = \frac{\sum\limits_i x_i}{n}$$]
+
+.orange[$$\hat{\sigma} = \sqrt{\frac{\sum\limits_i (x_i - \hat{\mu})^2}{n - 1}}$$]
+]
+
+---
+# Convergence
+
+```{r fig.height = 8, fig.width = 12}
+population_data <- rnorm(1000, TRUE_LOCATION, TRUE_SCALE)
+
+convergence_data <- tibble(
+    sample_size = seq(2, 1000)
+)
+
+convergence_data <-
+    convergence_data %>%
+    rowwise() %>%
+    mutate(mean = mean(population_data[sample(sample_size)])) %>%
+    mutate(standard_deviation = sd(population_data[sample(sample_size)])) %>%
+    ungroup()
+
+y_breaks_mean <- seq(TRUE_LOCATION - 2 * TRUE_SCALE, TRUE_LOCATION + 2 * TRUE_SCALE, 10)
+
+convergence_data %>%
+    ggplot(aes(x = sample_size, y = mean)) +
+    geom_hline(yintercept = TRUE_LOCATION, size = 2) +
+    geom_point(color = ORANGE) +
+    scale_y_continuous(breaks = y_breaks_mean, labels = ~ str_glue("{.x}\ncm"), limits = range(y_breaks_mean)) +
+    theme_minimal(BASE_SIZE) +
+    labs(
+        x = "Sample size",
+        y = "Sample mean"
+    )
+```
+
+---
+# Convergence
+
+```{r fig.height = 8, fig.width = 12}
+y_breaks_sd <- seq(TRUE_SCALE - 1 * TRUE_SCALE, TRUE_SCALE + 1 * TRUE_SCALE, 10)
+
+convergence_data %>%
+    ggplot(aes(x = sample_size, y = standard_deviation)) +
+    geom_hline(yintercept = TRUE_SCALE, size = 2) +
+    geom_point(color = ORANGE) +
+    scale_y_continuous(breaks = y_breaks_sd, labels = ~ str_glue("{.x}\ncm"), limits = range(y_breaks_sd)) +
+    theme_minimal(BASE_SIZE) +
+    labs(
+        x = "Sample size",
+        y = "Sample standard deviation"
+    )
+```
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = sample(c(rep(TRUE, times = 4), rep(FALSE, times = TOTAL_COUNT - 4)))
+)
+```
+]
+
+.pull-right-30.big.center[
+Pop Mean = 170
+
+Pop SD = 10
+
+<br>
+
+.orange[Sample mean = 163]
+
+.orange[Sample SD = 12]
+
+<br>
+
+.orange[$$\hat{\mu} = \frac{\sum\limits_i x_i}{n}$$]
+
+.orange[$$\hat{\sigma} = \sqrt{\frac{\sum\limits_i (x_i - \hat{\mu})^2}{n - 1}}$$]
 ]
 
 ---
@@ -316,52 +618,20 @@ plot_stickmen(
 ```
 ]
 
-.pull-right-30.big[
-$$h = 170 \text{ cm}$$
+.pull-right-30.big.center[
+Pop Mean = 170
 
-.orange[$$\widehat{\mu} = 181 \text{ cm}$$]
+Pop SD = 10
 
-.orange[$$\widehat{\sigma} = 10 \text{ cm}$$]
-]
+<br>
 
----
-.pull-left-70[
-```{r, fig.height = 8, fig.width = 6}
-plot_stickmen(
-    column_count = COLUMN_COUNT,
-    row_count = ROW_COUNT,
-    is_selected = sample(c(rep(TRUE, times = 4), rep(FALSE, times = TOTAL_COUNT - 4)))
-)
-```
-]
+.orange[Sample mean = 163]
 
-.pull-right-30.big[
-$$h = 170 \text{ cm}$$
+.orange[Sample SD = 12]
 
-.orange[$$\widehat{\mu} = 163 \text{ cm}$$]
+.orange[CI = [151, 176]]
 
-.orange[$$\widehat{\sigma} = 12 \text{ cm}$$]
-]
-
----
-.pull-left-70[
-```{r, fig.height = 8, fig.width = 6}
-plot_stickmen(
-    column_count = COLUMN_COUNT,
-    row_count = ROW_COUNT,
-    is_selected = sample(c(rep(TRUE, times = 4), rep(FALSE, times = TOTAL_COUNT - 4)))
-)
-```
-]
-
-.pull-right-30.big[
-$$h = 170 \text{ cm}$$
-
-.orange[$$\widehat{\mu} = 163 \text{ cm}$$]
-
-.orange[$$\widehat{\sigma} = 12 \text{ cm}$$]
-
-.orange[$$\text{CI} = [151 \text{ cm}, 176 \text{ cm}]$$]
+<br>
 
 .orange[$$\text{CI} = [\widehat{\mu} - \widehat{\sigma},\, \widehat{\mu} + \widehat{\sigma}]$$]
 ]
@@ -377,14 +647,20 @@ plot_stickmen(
 ```
 ]
 
-.pull-right-30.big[
-$$h = 170 \text{ cm}$$
+.pull-right-30.big.center[
+Pop Mean = 170
 
-.orange[$$\widehat{\mu} = 181 \text{ cm}$$]
+Pop SD = 10
 
-.orange[$$\widehat{\sigma} = 10 \text{ cm}$$]
+<br>
 
-.orange[$$\text{CI} = [171 \text{ cm}, 191 \text{ cm}]$$]
+.orange[Sample mean = 181]
+
+.orange[Sample SD = 10]
+
+.orange[CI = [171, 191]]
+
+<br>
 
 .orange[$$\text{CI} = [\widehat{\mu} - \widehat{\sigma},\, \widehat{\mu} + \widehat{\sigma}]$$]
 ]
@@ -400,14 +676,20 @@ plot_stickmen(
 ```
 ]
 
-.pull-right-30.big[
-$$h = 170 \text{ cm}$$
+.pull-right-30.big.center[
+Pop Mean = 170
 
-.orange[$$\widehat{\mu} = 181 \text{ cm}$$]
+Pop SD = 10
 
-.orange[$$\widehat{\sigma} = 10 \text{ cm}$$]
+<br>
 
-.orange[$$\text{CI} = [161 \text{ cm}, 201 \text{ cm}]$$]
+.orange[Sample mean = 181]
+
+.orange[Sample SD = 10]
+
+.orange[CI = [161, 201]]
+
+<br>
 
 .orange[$$\text{CI} = [\widehat{\mu} - 2 \widehat{\sigma},\, \widehat{\mu} + 2 \widehat{\sigma}]$$]
 ]
@@ -441,7 +723,7 @@ Means:
 
 ## Reference
 
-```{r references, echo = FALSE, results = "asis"}
+```{r references, echo = FALSE, results = "asis", cache = FALSE}
 PrintBibliography(bibliography)
 ```
 
