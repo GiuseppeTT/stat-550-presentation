@@ -11,6 +11,11 @@ output:
             slideNumberFormat: "%current%"
 ---
 
+class: center, middle, inverse
+
+# Content
+---
+
 ```{r R setup, include = FALSE}
 knitr::opts_chunk$set(
     echo = FALSE,
@@ -255,7 +260,7 @@ BibOptions(
 ---
 class: center, middle, inverse
 
-# A quick story
+# Let me tell you a story
 
 ---
 .pull-left-70[
@@ -318,20 +323,6 @@ plot_stickmen(
 ]
 
 ---
-.pull-left-70[
-```{r, fig.height = 8, fig.width = 6}
-plot_stickmen(
-    column_count = COLUMN_COUNT,
-    row_count = ROW_COUNT,
-    is_selected = FALSE
-)
-```
-]
-
-.pull-right-30.big.center[
-]
-
----
 # What is it?
 
 - **Certainty** is how confident you are about some guess
@@ -346,7 +337,7 @@ plot_stickmen(
 
 
 --
-- Understand uncertainty is to understand how much you know about the unkown
+- To understand uncertainty is to understand how much you don't know
 - Make honest guesses
 
 --
@@ -358,13 +349,15 @@ plot_stickmen(
 plot_stickmen(
     column_count = COLUMN_COUNT,
     row_count = ROW_COUNT,
-    is_selected = FALSE
+    is_selected = c(rep_len(FALSE, 2), TRUE, rep_len(FALSE, TOTAL_COUNT - 2 - 1))
 )
 ```
 ]
 
 .pull-right-30.big.center[
+.orange[Height = 153]
 ]
+
 
 ---
 .pull-left-70[
@@ -391,6 +384,23 @@ histogram_data %>%
     geom_histogram(bins = 50, fill = ORANGE) +
     theme_void()
 ```
+]
+
+---
+.pull-left-70[
+```{r, fig.height = 8, fig.width = 6}
+plot_stickmen(
+    column_count = COLUMN_COUNT,
+    row_count = ROW_COUNT,
+    is_selected = TRUE
+)
+```
+]
+
+.pull-right-30.big.center[
+.orange[Min = 100]
+
+.orange[Max = 240]
 ]
 
 ---
@@ -436,6 +446,11 @@ plot_stickmen(
 ---
 # How to measure it?
 
+- Range
+
+$$\text{Range} = \max(x) - \min(x)$$
+
+--
 - Standard deviation
 
 $$\sigma = \sqrt{\frac{\sum\limits_i (x_i - \mu)^2}{N}}$$
@@ -460,7 +475,7 @@ plot_stickmen(
 ]
 
 .pull-right-30.big.center[
-.orange[Mean = 177]
+.orange[Mean = 170]
 
 .orange[SD = 10]
 
@@ -489,9 +504,9 @@ Pop SD = 10
 
 <br>
 
-.orange[Sample mean = 169]
+.orange[Sample mean = 167]
 
-.orange[Sample SD = 10]
+.orange[Sample SD = 15]
 
 <br>
 
@@ -639,10 +654,11 @@ Pop SD = 10
 ---
 .pull-left-70[
 ```{r, fig.height = 8, fig.width = 6}
+CI_comparison_sample <- sample(c(rep(TRUE, times = 4), rep(FALSE, times = TOTAL_COUNT - 4)))
 plot_stickmen(
     column_count = COLUMN_COUNT,
     row_count = ROW_COUNT,
-    is_selected = sample(c(rep(TRUE, times = 4), rep(FALSE, times = TOTAL_COUNT - 4)))
+    is_selected = CI_comparison_sample
 )
 ```
 ]
@@ -671,7 +687,7 @@ Pop SD = 10
 plot_stickmen(
     column_count = COLUMN_COUNT,
     row_count = ROW_COUNT,
-    is_selected = sample(c(rep(TRUE, times = 4), rep(FALSE, times = TOTAL_COUNT - 4)))
+    is_selected = CI_comparison_sample
 )
 ```
 ]
@@ -717,6 +733,21 @@ This:
 Means:
 - The average Canadian men is estimated to be between 174cm and 175cm tall
 - We can be confident of this estimate, because if a lot of scientists replicated the experiment, we would expect 95% of them to be correct
+
+---
+# How to deal with it
+
+Population variability:
+
+- There is no way to get rid of it
+- But you can understand it better with statistics
+
+--
+
+Estimation error:
+
+- You can ignore the uncertainty and hope that you sample is big enough
+- Alternatively, you can build confidence intervals
 
 ---
 # Reference, code and others
